@@ -14,49 +14,204 @@
   const FONT = { bubble: 'Pangolin', title: 'Unbounded', sfx: 'Rubik Mono One', mono: 'JetBrains Mono', serif: 'Alegreya' };
   const L4 = () => ({ col: '', tone: '', ink: '', top: '' });
 
-  // ---------- пузырь реплики (fs — кегль в единицах кадра)
-  function bubble(o) {
-    const fs = o.fs || 40, lh = fs * 1.16, padY = fs * .5;
-    const h = o.lines.length * lh + padY * 1.3;
-    const x = o.x, y = o.y, w = o.w, r = fs * .75;
-    const [tx, ty] = o.tail || [x + w * .3, y + h + 60];
-    const above = ty < y;
-    const bx = Math.min(Math.max(tx - fs * .8, x + r), x + w - r - fs * 1.4);
-    const tw = fs * 1.05;
-    let d;
-    if (o.think) {
-      d = `M${x + r},${y} H${x + w - r} Q${x + w},${y} ${x + w},${y + r} V${y + h - r} Q${x + w},${y + h} ${x + w - r},${y + h} H${x + r} Q${x},${y + h} ${x},${y + h - r} V${y + r} Q${x},${y} ${x + r},${y}Z`;
-    } else if (!above) {
-      d = `M${x + r},${y} H${x + w - r} Q${x + w},${y} ${x + w},${y + r} V${y + h - r} Q${x + w},${y + h} ${x + w - r},${y + h}
-           H${bx + tw} L${tx},${ty} L${bx},${y + h} H${x + r} Q${x},${y + h} ${x},${y + h - r} V${y + r} Q${x},${y} ${x + r},${y}Z`;
-    } else {
-      d = `M${x + r},${y} H${bx} L${tx},${ty} L${bx + tw},${y} H${x + w - r} Q${x + w},${y} ${x + w},${y + r} V${y + h - r} Q${x + w},${y + h} ${x + w - r},${y + h}
-           H${x + r} Q${x},${y + h} ${x},${y + h - r} V${y + r} Q${x},${y} ${x + r},${y}Z`;
+  // ---------- типографика: текст мерим настоящим шрифтом (книга собирается после загрузки шрифтов)
+  const mctx = document.createElement('canvas').getContext('2d');
+  function textW(str, fs, family, weight = 400, track = 0) {
+    mctx.font = `${weight} ${fs}px ${family}`;
+    return mctx.measureText(str).width + track * fs * str.length;
+  }
+  // детерминированный «случай»: одинаковая форма пузыря при каждой загрузке
+  function rng(seed) { let s = (seed >>> 0) || 1; return () => (s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296; }
+  function hashStr(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+  const f1 = v => (+v).toFixed(1);
+  const esc = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // замкнутая плавная кривая через точки (Катмулл-Ром → Безье)
+  function smoothClosed(pts) {
+    const n = pts.length; let d = `M${f1(pts[0][0])},${f1(pts[0][1])}`;
+    for (let i = 0; i < n; i++) {
+      const p0 = pts[(i - 1 + n) % n], p1 = pts[i], p2 = pts[(i + 1) % n], p3 = pts[(i + 2) % n];
+      d += ` C${f1(p1[0] + (p2[0] - p0[0]) / 6)},${f1(p1[1] + (p2[1] - p0[1]) / 6)} ${f1(p2[0] - (p3[0] - p1[0]) / 6)},${f1(p2[1] - (p3[1] - p1[1]) / 6)} ${f1(p2[0])},${f1(p2[1])}`;
     }
+    return d + 'Z';
+  }
+  // суперэллипс — «пухлый» прямоугольник: так выглядят пузыри в печатных комиксах
+  const SE = 3.4;
+  const seR = (a, b, th) => 1 / Math.pow(Math.pow(Math.abs(Math.cos(th)) / a, SE) + Math.pow(Math.abs(Math.sin(th)) / b, SE), 1 / SE);
+
+  // область кадра, внутри которой должны остаться пузыри и звуки (её ставит движок книги)
+  let FIT = null;
+  function setFit(r) { FIT = r; }
+
+  // ---------- пузырь реплики
+  // type: speech (обычный), shout (крик-звезда), think (мысль-облако), whisper (шёпот пунктиром), box (плашка рассказчика)
+  // *слово* в строке — акцент красным. x, y, w — желаемое место (верх-лево и ширина), tail — рот говорящего.
+  function bubble(o) {
+    const type = o.type || 'speech';
+    const upper = !o.font;
+    const family = o.font || FONT.bubble, weight = o.font ? 700 : 400, track = upper ? .03 : 0;
+    const lines = o.lines.map(l => upper ? l.toUpperCase() : l);
+    const plain = l => l.replace(/\*/g, '');
+    const layout = fs => {
+      const lh = fs * 1.14;
+      const tw = Math.max(...lines.map(l => textW(plain(l), fs, family, weight, track)));
+      const th = (lines.length - 1) * lh + fs * .74;            // от верха заглавных до низа последней строки
+      let a, b;
+      if (type === 'box') { a = tw / 2 + fs * .75; b = th / 2 + fs * .6; }
+      else {
+        a = tw / 2 + fs * (type === 'shout' ? 1.3 : 1.05);
+        const X = Math.pow((tw / 2) / a, SE);
+        b = (th / 2 + fs * .25) / Math.pow(Math.max(.2, .92 - X), 1 / SE);
+        if (type === 'shout') { a *= 1.06; b *= 1.18; }
+        if (type === 'think') { a *= 1.04; b *= 1.06; }
+      }
+      return { fs, lh, tw, th, a, b };
+    };
+    let L = layout((o.fs || 40) * (FIT && FIT.boost || 1));
+    const ext = L => {
+      const bump = type === 'think' || type === 'shout' ? L.fs * .6 : 0;
+      return { l: L.a + bump + L.fs * .2, r: L.a + bump + L.fs * .4, t: L.b + bump + (o.who ? L.fs * 1.0 : L.fs * .2), b: L.b + bump + L.fs * .4 };
+    };
+    let cx = o.cx != null ? o.cx : o.x + (o.w || 2 * L.a) / 2;
+    let cy = o.cy != null ? o.cy : o.y + L.b + (o.who ? L.fs * .5 : 0);
+    if (FIT) {
+      const m = FIT.m;
+      let E = ext(L);
+      const k = Math.min(1, (FIT.w - 2 * m) / (E.l + E.r), (FIT.h - 2 * m) / (E.t + E.b));
+      if (k < 1) { L = layout(L.fs * k); E = ext(L); }
+      const clampX = x => Math.min(Math.max(x, FIT.x + m + E.l), FIT.x + FIT.w - m - E.r);
+      const clampY = y => Math.min(Math.max(y, FIT.y + m + E.t), FIT.y + FIT.h - m - E.b);
+      cx = clampX(cx); cy = clampY(cy);
+      // пузырь не закрывает говорящего: кончик хвоста остаётся снаружи
+      if (o.tail) {
+        const [tx, ty] = o.tail, gap = L.fs * .9;
+        const inside = (x, y) => { const dx = tx - x, dy = ty - y; return Math.hypot(dx, dy) < seR(L.a, L.b, Math.atan2(dy, dx)) + gap; };
+        if (inside(cx, cy)) {
+          const tries = [[cx, ty - L.b - gap - L.fs * .3], [cx, ty + L.b + gap + L.fs * .3], [tx - L.a - gap, cy], [tx + L.a + gap, cy]];
+          for (const [x, y] of tries) { const X = clampX(x), Y = clampY(y); if (!inside(X, Y)) { cx = X; cy = Y; break; } }
+        }
+      }
+    }
+    const { fs, lh, a, b } = L;
+    const R = rng(hashStr((o.id || '') + lines.join('|')));
+    const sw = Math.max(3, fs * .12), sh = fs * .17;
+    const fill = o.fill || (type === 'box' ? C.yellow : '#fff');
+    // --- контур
+    let body;
+    if (type === 'box') {
+      const j = () => (R() - .5) * fs * .16;
+      body = `M${f1(cx - a + j())},${f1(cy - b + j())} L${f1(cx + a + j())},${f1(cy - b + j())} L${f1(cx + a + j())},${f1(cy + b + j())} L${f1(cx - a + j())},${f1(cy + b + j())}Z`;
+    } else if (type === 'shout') {
+      const per = Math.PI * (3 * (a + b) - Math.sqrt((3 * a + b) * (a + 3 * b)));
+      const n = Math.max(12, Math.round(per / (fs * 1.5)));
+      let d = '';
+      for (let i = 0; i < n * 2; i++) {
+        const th = (i + (R() - .5) * .35) / (n * 2) * Math.PI * 2, r = seR(a, b, th) * (i % 2 ? .97 : 1.13 + R() * .12);
+        d += (i ? 'L' : 'M') + f1(cx + Math.cos(th) * r) + ',' + f1(cy + Math.sin(th) * r);
+      }
+      body = d + 'Z';
+    } else {
+      const pts = [];
+      for (let i = 0; i < 32; i++) { const th = i / 32 * Math.PI * 2, r = seR(a, b, th) * (1 + (R() - .5) * .028); pts.push([cx + Math.cos(th) * r, cy + Math.sin(th) * r]); }
+      body = smoothClosed(pts);
+    }
+    // --- хвост к говорящему
+    let tail = '', bubs = '';
+    if (o.tail && type !== 'box') {
+      const [tx, ty] = o.tail;
+      let dx = tx - cx, dy = ty - cy; const dist = Math.hypot(dx, dy) || 1; dx /= dist; dy /= dist;
+      const rEdge = seR(a, b, Math.atan2(dy, dx));
+      if (dist > rEdge + fs * .4) {
+        if (type === 'think') {
+          for (let i = 0; i < 3; i++) {
+            const t = rEdge + fs * .45 + (dist - rEdge - fs * .9) * (i + .3) / 3, r = fs * (.38 - i * .09);
+            bubs += `<circle cx="${f1(cx + dx * t)}" cy="${f1(cy + dy * t)}" r="${f1(r)}"/>`;
+          }
+        } else {
+          const pull = Math.min(fs * .5, (dist - rEdge) * .2);
+          const tip = [tx - dx * pull, ty - dy * pull];
+          const base = rEdge * .74, bw = fs * (type === 'shout' ? .62 : .52);
+          const bx = cx + dx * base, by = cy + dy * base, px = -dy, py = dx;
+          const len = Math.hypot(tip[0] - bx, tip[1] - by), bend = (R() > .5 ? 1 : -1) * len * .14;
+          const mx = (bx + tip[0]) / 2 + px * bend, my = (by + tip[1]) / 2 + py * bend;
+          tail = type === 'shout'
+            ? `M${f1(bx + px * bw)},${f1(by + py * bw)} L${f1(mx + px * bw * .55)},${f1(my + py * bw * .55)} L${f1(tip[0])},${f1(tip[1])} L${f1(mx - px * bw * .1)},${f1(my - py * bw * .1)} L${f1(bx - px * bw)},${f1(by - py * bw)}Z`
+            : `M${f1(bx + px * bw)},${f1(by + py * bw)} Q${f1(mx + px * bw * .45)},${f1(my + py * bw * .45)} ${f1(tip[0])},${f1(tip[1])} Q${f1(mx - px * bw * .2)},${f1(my - py * bw * .2)} ${f1(bx - px * bw)},${f1(by - py * bw)}Z`;
+        }
+      }
+    }
+    // облако мысли: «барашки» по краю
+    let bumps = '';
+    if (type === 'think') {
+      const per = Math.PI * (3 * (a + b) - Math.sqrt((3 * a + b) * (a + 3 * b)));
+      const n = Math.max(10, Math.round(per / (fs * 1.25)));
+      for (let i = 0; i < n; i++) {
+        const th = (i + R() * .3) / n * Math.PI * 2, r = seR(a, b, th) * .98;
+        bumps += `<circle cx="${f1(cx + Math.cos(th) * r)}" cy="${f1(cy + Math.sin(th) * r)}" r="${f1(fs * (.5 + R() * .2))}"/>`;
+      }
+    }
+    // --- текст: строки и слова (слова проявляются по очереди)
+    const emCol = type === 'box' ? C.red : '#d0170f';
+    const y0 = cy - (lines.length - 1) * lh / 2 + fs * .37;
+    // *акцент* может занимать несколько слов: «*на три!*», «*159 квинтиллионов*»
+    let inEm = false;
+    const text = lines.map((line, i) => {
+      const words = line.split(/\s+/).filter(Boolean);
+      return `<text x="${f1(cx)}" y="${f1(y0 + i * lh)}" text-anchor="middle">` + words.map((w, j) => {
+        const sp = j < words.length - 1 ? ' ' : '';
+        if (w.startsWith('*')) { inEm = true; w = w.slice(1); }
+        let tail = '', close = false;
+        const m = w.match(/^(.*?)\*([^*]*)$/);
+        if (m) { w = m[1]; tail = m[2]; close = true; }
+        const em = inEm;
+        if (close) inEm = false;
+        const word = em ? `<tspan class="w em" fill="${emCol}" stroke="${emCol}">${esc(w)}</tspan>${tail || sp ? `<tspan class="w">${esc(tail)}${sp}</tspan>` : ''}` : `<tspan class="w">${esc(w + tail)}${sp}</tspan>`;
+        return word;
+      }).join('') + '</text>';
+    }).join('');
+    const textAttrs = `font-family="${family}, cursive" font-size="${f1(fs)}" font-weight="${weight}" fill="#111" stroke="#111" stroke-width="${f1(fs * (upper ? .035 : .01))}" paint-order="stroke" style="letter-spacing:${f1(track * fs)}px"`;
+    // --- ярлык с именем
+    let who = '';
+    if (o.who) {
+      const wfs = fs * .5, ww = textW(o.who, wfs, FONT.title, 700) + wfs * 1.3;
+      const wx = cx - a * .78, wy = cy - b - wfs * .35;
+      who = `<g transform="translate(${f1(wx)} ${f1(wy)}) rotate(-4)"><rect x="${f1(sw * .5)}" y="${f1(-wfs * .95 + sw * .5)}" width="${f1(ww)}" height="${f1(wfs * 1.5)}" fill="#111"/><rect x="0" y="${f1(-wfs * .95)}" width="${f1(ww)}" height="${f1(wfs * 1.5)}" fill="${o.whoFill || C.red}" stroke="#111" stroke-width="${f1(sw * .55)}"/>
+        <text x="${f1(wfs * .65)}" y="${f1(wfs * .22)}" font-family="${FONT.title}" font-weight="700" font-size="${f1(wfs)}" fill="#fff">${esc(o.who)}</text></g>`;
+    }
+    const dash = type === 'whisper' ? ` stroke-dasharray="${f1(fs * .32)} ${f1(fs * .2)}"` : '';
+    const tipAt = o.tail && type !== 'box' ? `${f1(o.tail[0])} ${f1(o.tail[1])}` : `${f1(cx)} ${f1(cy + b)}`;
     const id = o.id ? ` id="${o.id}"` : '';
-    const tsp = o.lines.map((l, i) => `<tspan x="${x + w / 2}" y="${(y + padY + fs * .86 + i * lh).toFixed(1)}">${l}</tspan>`).join('');
-    const dots = o.think ? [0, 1, 2].map(i => `<circle cx="${tx + (x + w / 2 - tx) * (i + 1) * .22}" cy="${ty + (y + h - ty) * (i + 1) * .22}" r="${fs * (.18 + i * .1)}" fill="#fff" stroke="#111" stroke-width="${fs * .1}"/>`).join('') : '';
-    const sw = Math.max(3, fs * .11);
-    return `<g${id} class="bubble ${o.cls || ''}" data-tail="${tx} ${ty}"><g class="bz">${dots}
-      <path d="${d}" fill="#111" transform="translate(${fs * .16} ${fs * .16})"/>
-      <path d="${d}" fill="${o.fill || '#fff'}" stroke="#111" stroke-width="${sw}" stroke-linejoin="round"/>
-      <text font-family="${o.font || FONT.bubble}, cursive" font-size="${fs}" text-anchor="middle" fill="#111" ${o.bold ? 'font-weight="700"' : ''}>${tsp}</text>
-      ${o.who ? `<g transform="translate(${x + fs * .4} ${y - fs * .55}) rotate(-3)"><rect x="0" y="-${fs * .1}" width="${o.who.length * fs * .44 + fs * .7}" height="${fs * .86}" fill="${o.whoFill || C.red}" stroke="#111" stroke-width="${sw * .6}"/><text x="${fs * .34}" y="${fs * .55}" font-family="${FONT.title}" font-weight="700" font-size="${fs * .48}" fill="#fff">${o.who}</text></g>` : ''}
+    const shadowShapes = `${tail ? `<path d="${tail}"/>` : ''}${bumps}<path d="${body}"/>${bubs}`;
+    return `<g${id} class="bubble t-${type} ${o.cls || ''}" data-tail="${tipAt}"><g class="bz">
+      <g fill="#111" opacity=".92" transform="translate(${f1(sh)} ${f1(sh)})">${shadowShapes}</g>
+      ${tail ? `<path d="${tail}" fill="${fill}" stroke="#111" stroke-width="${f1(sw)}" stroke-linejoin="round"${dash}/>` : ''}
+      ${bumps ? `<g fill="${fill}" stroke="#111" stroke-width="${f1(sw)}">${bumps}</g><path d="${body}" fill="${fill}"/>` : `<path d="${body}" fill="${fill}" stroke="#111" stroke-width="${f1(sw)}" stroke-linejoin="round"${dash}/>`}
+      ${tail ? `<path d="${tail}" fill="${fill}"/>` : ''}
+      ${bubs ? `<g fill="${fill}" stroke="#111" stroke-width="${f1(sw * .8)}">${bubs}</g>` : ''}
+      <g ${textAttrs}>${text}</g>${who}
     </g></g>`;
   }
 
-  // звук-надпись («ЩЁЛК!») со взрывом-звездой
+  // звук-надпись («ЩЁЛК!») со взрывом-звездой; тоже не выходит за кадр
   function sfx(o) {
     const fs = o.fs || 90, rot = o.rot || -8, id = o.id ? ` id="${o.id}"` : '';
+    let x = o.x, y = o.y;
+    if (FIT) {
+      const hw = Math.max((o.burst || 0) * 1.42, textW(o.text, fs, FONT.sfx) * .55 + fs * .2) + fs * .12;
+      const hh = Math.max((o.burst || 0) * 1.08, fs * .75) + fs * .12, m = FIT.m;
+      x = Math.min(Math.max(x, FIT.x + m + hw), FIT.x + FIT.w - m - hw);
+      y = Math.min(Math.max(y, FIT.y + m + hh), FIT.y + FIT.h - m - hh);
+    }
     let burst = '';
     if (o.burst) {
       const n = 14, r1 = o.burst, r2 = o.burst * .62; let d = '';
-      for (let i = 0; i < n * 2; i++) { const a = i / (n * 2) * Math.PI * 2, r = i % 2 ? r2 : r1 * (.85 + (i * 37 % 7) / 30); d += (i ? 'L' : 'M') + (Math.cos(a) * r * 1.35).toFixed(1) + ',' + (Math.sin(a) * r).toFixed(1); }
-      burst = `<path d="${d}Z" fill="${o.burstFill || C.yellow}" stroke="#111" stroke-width="${fs * .07}"/>`;
+      for (let i = 0; i < n * 2; i++) { const a = i / (n * 2) * Math.PI * 2, r = i % 2 ? r2 : r1 * (.85 + (i * 37 % 7) / 30); d += (i ? 'L' : 'M') + f1(Math.cos(a) * r * 1.35) + ',' + f1(Math.sin(a) * r); }
+      burst = `<path d="${d}Z" fill="#111" transform="translate(${f1(fs * .1)} ${f1(fs * .1)})"/><path d="${d}Z" fill="${o.burstFill || C.yellow}" stroke="#111" stroke-width="${f1(fs * .07)}" stroke-linejoin="round"/>`;
     }
-    return `<g${id} class="sfx" data-at="${o.x} ${o.y}"><g transform="translate(${o.x} ${o.y}) rotate(${rot})">${burst}
-      <text text-anchor="middle" y="${fs * .35}" font-family="${FONT.sfx}, ${FONT.title}, sans-serif" font-size="${fs}" fill="#111" transform="translate(${fs * .07} ${fs * .07}) skewX(-10)">${o.text}</text>
-      <text text-anchor="middle" y="${fs * .35}" font-family="${FONT.sfx}, ${FONT.title}, sans-serif" font-size="${fs}" fill="${o.fill || C.red}" stroke="#111" stroke-width="${fs * .06}" paint-order="stroke" transform="skewX(-10)">${o.text}</text></g></g>`;
+    const T = (dx, dy, extra) => `<text text-anchor="middle" y="${f1(fs * .35)}" font-family="${FONT.sfx}, ${FONT.title}, sans-serif" font-size="${fs}" transform="translate(${f1(dx)} ${f1(dy)}) skewX(-10)" ${extra}>${esc(o.text)}</text>`;
+    return `<g${id} class="sfx" data-at="${f1(x)} ${f1(y)}"><g transform="translate(${f1(x)} ${f1(y)}) rotate(${rot})">${burst}
+      ${T(fs * .12, fs * .12, 'fill="#111" stroke="#111" stroke-width="' + f1(fs * .08) + '" stroke-linejoin="round"')}
+      ${T(0, 0, 'fill="' + (o.fill || C.red) + '" stroke="#111" stroke-width="' + f1(fs * .08) + '" stroke-linejoin="round" paint-order="stroke"')}
+      ${T(-fs * .03, -fs * .05, 'fill="none" stroke="#fff" stroke-width="' + f1(fs * .025) + '" opacity=".55"')}</g></g>`;
   }
 
   // =====================================================================
@@ -575,5 +730,5 @@
     <radialGradient id="gVignette" cx=".5" cy=".5" r=".7"><stop offset=".55" stop-color="#fff"/><stop offset="1" stop-color="#777"/></radialGradient>
   `;
 
-  window.ART = { C, BG, FONT, L4, bubble, sfx, person, HW, mountains, cloud, column, temple, tent, palisade, aquila, tree, bush, shelf, speedlines, skyline, dome, palm, laurel, caesarCoin, GRADS };
+  window.ART = { C, BG, FONT, L4, bubble, sfx, setFit, textW, person, HW, mountains, cloud, column, temple, tent, palisade, aquila, tree, bush, shelf, speedlines, skyline, dome, palm, laurel, caesarCoin, GRADS };
 })();

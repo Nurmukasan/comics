@@ -24,8 +24,7 @@ await page.waitForTimeout(2000);
 
 const segs = await page.evaluate(plan => {
   const B = window.__book;
-  B.stTrig.disable(false);
-  for (const s of ['.hud', '.progress', '#scrollHint']) document.querySelector(s).style.display = 'none';
+  for (const s of ['.hud', '.progress', '#scrollHint', '.nav']) { const el = document.querySelector(s); if (el) el.style.display = 'none'; }
   return plan.map(([id, a, z, sec, withFlip]) => {
     const st = B.steps.filter(s => s.page.id === id);
     let t0 = st[a].T;

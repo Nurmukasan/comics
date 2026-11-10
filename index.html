@@ -36,7 +36,7 @@
 
 <main id="stage" aria-label="Комикс">
   <div id="world"><div id="book"></div></div>
-  <div class="scroll-hint" id="scrollHint">листай вниз, чтобы открыть ↓</div>
+  <div class="scroll-hint" id="scrollHint"><span class="k">↓</span> или колесо, свайп, кнопка «Дальше» — <b>один шаг за раз</b></div>
 </main>
 
 <div id="cap" class="cap" aria-live="polite"></div>
@@ -46,13 +46,18 @@
 
 <div class="prompter" id="prompter" hidden><div class="prompter-inner" id="prompterText"></div></div>
 
-<div id="scroller" aria-hidden="true"></div>
+<nav class="nav" aria-label="Листать комикс">
+  <button class="nav-btn prev" id="navPrev" aria-label="Назад (стрелка вверх)" title="Назад — ↑"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 15l7-7 7 7"/></svg></button>
+  <span class="nav-count" id="navCount" aria-live="polite">1 / 1</span>
+  <button class="nav-btn next" id="navNext" aria-label="Дальше (стрелка вниз)" title="Дальше — ↓"><span>Дальше</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9l7 7 7-7"/></svg></button>
+</nav>
 
-<section id="speech" class="speech">
+<section id="speech" class="speech" hidden aria-label="Текст выступления">
+  <button class="speech-close" id="speechClose" aria-label="Закрыть текст выступления">× Назад к комиксу</button>
   <div class="speech-wrap">
     <p class="kicker">Речевое сопровождение · 2 минуты · два голоса</p>
     <h2>Текст выступления</h2>
-    <p class="speech-hint">Включите «Суфлёр» в шапке, и реплики появятся внизу экрана прямо во время показа. Стрелки и пробел листают кадры, удобно с презентационным пультом.</p>
+    <p class="speech-hint">Включите «Суфлёр» в шапке, и реплики появятся внизу экрана прямо во время показа. Комикс листается по шагам: стрелки ↓ ↑, пробел, колесо мыши, свайп или кнопки внизу. Подходит и презентационный пульт.</p>
     <ol class="speech-list" id="speechList"></ol>
     <div class="speech-grid">
       <div class="card">
@@ -89,8 +94,8 @@
       </div>
     </div>
     <div class="credits">
-      <p>Комикс нарисован кодом: персонажи и сцены — SVG со штрихом «гравюра» и растровыми точками, как в печатных комиксах; книга листается в 3D на CSS; бюст Цезаря — настоящая 3D-модель (three.js, скан головы Lee Perry-Smith, Infinite-Realities, CC BY 3.0) с гравюрным шейдером. Анимация — GSAP ScrollTrigger, трейлер — HyperFrames. Правила движения — из скилла OBSION Motion, тексты вычищены по правилам stop-slop.</p>
-      <p><a href="#top" data-goto="0">↑ В начало комикса</a></p>
+      <p>Комикс нарисован кодом: персонажи и сцены — SVG со штрихом «гравюра» и растровыми точками, как в печатных комиксах; книга листается в 3D на CSS; бюст Цезаря — настоящая 3D-модель (three.js, скан головы Lee Perry-Smith, Infinite-Realities, CC BY 3.0) с гравюрным шейдером. Анимация — GSAP, комикс листается по шагам; трейлер — HyperFrames. Правила движения — из скилла OBSION Motion, тексты вычищены по правилам stop-slop.</p>
+      <p><a href="#1" data-goto="0">↑ В начало комикса</a></p>
     </div>
   </div>
 </section>
@@ -105,7 +110,6 @@
 <noscript><p class="noscript">Комиксу нужен JavaScript.</p></noscript>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="js/art.js"></script>
 <script src="js/fx.js"></script>
 <script src="js/pages.js"></script>

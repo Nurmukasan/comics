@@ -1,4 +1,5 @@
 :root {
+  --nav-space: 84px;
   --red: #e2231a;
   --ink: #111;
   --paper: #f5efe0;
@@ -11,8 +12,8 @@
 :root[data-theme="dark"] { --paper: #f2ead8; }
 
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
-body { margin: 0; background: #140a08; color: var(--ink); font-family: Alegreya, Georgia, serif; overflow-x: hidden; }
+html { -webkit-text-size-adjust: 100%; height: 100%; overflow: hidden; overscroll-behavior: none; }
+body { margin: 0; height: 100%; overflow: hidden; background: #140a08; color: var(--ink); font-family: Alegreya, Georgia, serif; }
 button, input { font: inherit; }
 
 /* ---------- HUD */
@@ -31,7 +32,7 @@ button, input { font: inherit; }
 
 /* ---------- стол и книга */
 #stage {
-  position: fixed; inset: 0; z-index: 1; overflow: hidden;
+  position: fixed; inset: 0; z-index: 1; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none;
   background:
     radial-gradient(ellipse 70% 60% at 50% 42%, rgba(255, 196, 140, .22), transparent 70%),
     repeating-linear-gradient(176deg, rgba(0, 0, 0, .18) 0 2px, transparent 2px 9px),
@@ -140,22 +141,28 @@ button, input { font: inherit; }
 .bc-credits { font-size: 33px; line-height: 1.3; color: #ddd; max-width: 880px; }
 .bc-link { display: inline-block; margin-top: 30px; font: 900 40px Unbounded, sans-serif; color: var(--yellow); }
 
-/* ---------- подпись (экранные координаты) */
+/* ---------- подпись рассказчика: жёлтая плашка, как в печатных комиксах */
 .cap {
   position: fixed; left: 0; top: 0; z-index: 30; width: min(440px, calc(100vw - 20px));
-  background: var(--yellow); border: 3px solid var(--ink); box-shadow: 6px 6px 0 var(--ink); padding: 12px 16px 10px;
-  font-size: 19px; line-height: 1.36; opacity: 0; pointer-events: none; transition: opacity .3s;
+  background: var(--yellow); border: 3px solid var(--ink); box-shadow: 6px 6px 0 var(--ink); padding: 12px 16px 11px;
+  font-size: 19px; line-height: 1.34; opacity: 0; pointer-events: none; transition: opacity .3s;
+  background-image: radial-gradient(circle at 1px 1px, rgba(0, 0, 0, .1) 1px, transparent 1.4px); background-size: 7px 7px;
 }
+.cap::before { content: ''; position: absolute; left: -3px; top: -3px; width: 18px; height: 18px; background: var(--red); border: 3px solid var(--ink); border-width: 0 3px 3px 0; }
 .cap.on { opacity: 1; }
+.cap.in p { animation: capIn .5s cubic-bezier(.2, .8, .2, 1) both; }
+.cap.in p:nth-child(2) { animation-delay: .08s; }
+.cap.in p:nth-child(3) { animation-delay: .16s; }
+@keyframes capIn { from { clip-path: inset(0 100% 0 0); transform: translateX(-10px); } to { clip-path: inset(0 0 0 0); transform: none; } }
 .flipping .cap.on, .flipping .widget.on { opacity: 0; pointer-events: none; }
 .cap p { margin: 0 0 6px; }
 .cap p:last-child { margin-bottom: 0; }
-.cap-k { font-family: Unbounded, sans-serif; font-weight: 900; text-transform: uppercase; font-size: 14px; letter-spacing: .02em; color: var(--red); }
-.cap-note { font-size: 16px; font-style: italic; border-top: 2px dashed rgba(0, 0, 0, .35); padding-top: 6px; margin-top: 6px !important; }
+.cap-k { font-family: Unbounded, sans-serif; font-weight: 900; text-transform: uppercase; font-size: .74em; letter-spacing: .03em; color: var(--red); padding-left: 10px; }
+.cap-note { font-size: .84em; font-style: italic; border-top: 2px dashed rgba(0, 0, 0, .35); padding-top: 6px; margin-top: 6px !important; }
 
 /* ---------- виджеты */
 .widget {
-  position: fixed; right: 18px; bottom: 26px; z-index: 31; width: min(380px, calc(100vw - 32px));
+  position: fixed; right: 18px; bottom: var(--nav-space); z-index: 31; width: min(380px, calc(100vw - 32px));
   background: #fff; border: 3px solid var(--ink); box-shadow: 6px 6px 0 var(--ink); padding: 14px 16px; font-size: 17px;
   opacity: 0; visibility: hidden; transform: translateY(20px); transition: opacity .3s, transform .3s, visibility 0s .3s;
 }
@@ -214,22 +221,25 @@ button, input { font: inherit; }
 #w-aes { width: min(520px, calc(100vw - 32px)); }
 
 /* ---------- подсказка и прогресс */
-.scroll-hint { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); font: 700 13px Unbounded, sans-serif; color: #fff; background: rgba(0, 0, 0, .55); border: 2px solid #fff; padding: 8px 14px; letter-spacing: .04em; animation: bob 1.4s ease-in-out infinite; transition: opacity .4s; white-space: nowrap; }
-.scrolled .scroll-hint { opacity: 0; }
+.scroll-hint { position: absolute; left: 50%; bottom: calc(var(--nav-space) + 4px); transform: translateX(-50%); font: 700 13px/1.3 Unbounded, sans-serif; color: #fff; background: rgba(0, 0, 0, .6); border: 2px solid #fff; padding: 8px 14px; letter-spacing: .02em; animation: bob 1.4s ease-in-out infinite; transition: opacity .4s; white-space: nowrap; pointer-events: none; }
+.scroll-hint .k { display: inline-block; background: var(--yellow); color: #111; border: 2px solid #111; padding: 0 6px; margin-right: 4px; }
+.scroll-hint b { color: var(--yellow); }
+.navigated .scroll-hint { opacity: 0; }
 @keyframes bob { 50% { transform: translate(-50%, 6px); } }
 .progress { position: fixed; left: 0; right: 0; bottom: 0; height: 6px; z-index: 40; background: rgba(255, 255, 255, .15); }
 .progress-fill { height: 100%; background: var(--yellow); transform-origin: 0 50%; transform: scaleX(0); }
 
 /* ---------- суфлёр */
-.prompter { position: fixed; left: 50%; transform: translateX(-50%); bottom: 14px; z-index: 60; width: min(820px, calc(100% - 24px)); background: rgba(17, 17, 17, .94); color: #fff; border: 3px solid var(--yellow); padding: 12px 16px; font-size: 20px; line-height: 1.45; }
+.prompter { position: fixed; left: 50%; transform: translateX(-50%); bottom: var(--nav-space); z-index: 60; width: min(820px, calc(100% - 24px)); background: rgba(17, 17, 17, .94); color: #fff; border: 3px solid var(--yellow); padding: 12px 16px; font-size: 20px; line-height: 1.45; }
 .prompter p { margin: 0 0 4px; }
 .prompter b { display: inline-block; background: var(--yellow); color: var(--ink); font-family: Unbounded, sans-serif; padding: 0 6px; margin-right: 8px; }
 .prompter .muted { opacity: .6; }
-.prompting .widget { bottom: 170px; }
+.prompting .widget { bottom: calc(var(--nav-space) + 150px); }
 
 /* ---------- текст речи */
-#scroller { position: relative; z-index: 0; pointer-events: none; }
-.speech { position: relative; z-index: 20; background: var(--paper); border-top: 6px solid var(--ink); }
+.speech { position: fixed; inset: 0; z-index: 70; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; background: var(--paper); border-top: 6px solid var(--ink); }
+.speech[hidden] { display: none; }
+.speech-close { position: sticky; top: 12px; float: right; margin: 12px 16px 0 0; z-index: 2; font: 900 13px Unbounded, sans-serif; text-transform: uppercase; background: var(--yellow); color: #111; border: 3px solid #111; box-shadow: 4px 4px 0 #111; padding: 9px 14px; cursor: pointer; }
 .speech-wrap { max-width: 980px; margin: 0 auto; padding: 56px 16px 80px; }
 .kicker { font-family: Unbounded, sans-serif; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--red); font-size: 13px; margin: 0; }
 .speech h2 { font-family: Unbounded, sans-serif; font-weight: 900; font-size: clamp(30px, 5vw, 52px); margin: 6px 0 12px; }
@@ -257,6 +267,20 @@ button, input { font: inherit; }
 .modal-close { position: absolute; top: -44px; right: 0; width: 38px; height: 38px; font-size: 26px; line-height: 1; border: 2px solid #fff; background: var(--red); color: #fff; cursor: pointer; }
 .noscript { position: fixed; inset: 0; display: grid; place-items: center; background: #fff; z-index: 99; }
 
+
+/* ---------- кнопки листания */
+.nav { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 45; display: flex; align-items: center; gap: 10px; padding: 6px 8px; background: rgba(17, 17, 17, .86); border: 2px solid rgba(255, 255, 255, .2); border-radius: 40px; box-shadow: 0 10px 28px rgba(0, 0, 0, .5); }
+.nav-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 46px; min-width: 52px; padding: 0 14px; border-radius: 26px; border: 3px solid #111; background: #fff; color: #111; font: 900 14px Unbounded, sans-serif; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 0 #000; transition: transform .08s, box-shadow .08s, background .2s; }
+.nav-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; }
+.nav-btn.next { background: var(--yellow); }
+.nav-btn.next.last span::after { content: ' · речь'; }
+.nav-btn:hover { background: #ffe27a; }
+.nav-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #000; }
+.nav-btn:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.nav-btn[disabled] { opacity: .35; cursor: default; transform: none; box-shadow: 0 4px 0 #000; }
+.nav-count { min-width: 76px; text-align: center; font: 700 15px 'JetBrains Mono', monospace; color: #fff; }
+.reading .nav, .reading .hud, .reading #cap, .reading .widget { visibility: hidden; }
+
 /* ---------- телефон */
 @media (max-width: 760px), (max-aspect-ratio: 9/10) {
   :root { --hud-h: 46px; }
@@ -266,10 +290,13 @@ button, input { font: inherit; }
   .hud-frame { display: none; }
   .hud-btn { font-size: 9px; padding: 4px 5px; }
   #btnSpeech { display: none; }
-  .cap { font-size: 16px; line-height: 1.32; padding: 9px 12px 8px; box-shadow: 4px 4px 0 var(--ink); border-width: 2px; }
-  .cap-k { font-size: 12px; }
-  .cap-note { font-size: 14px; }
-  .widget { left: 8px; right: 8px; width: auto; bottom: 12px; font-size: 15px; box-shadow: 4px 4px 0 var(--ink); padding: 10px 12px; }
+  .cap { line-height: 1.3; padding: 9px 12px 8px; box-shadow: 4px 4px 0 var(--ink); border-width: 2px; }
+  :root { --nav-space: 72px; }
+  .widget { left: 8px; right: 8px; width: auto; bottom: var(--nav-space); font-size: 15px; box-shadow: 4px 4px 0 var(--ink); padding: 10px 12px; }
+  .nav { bottom: 12px; gap: 6px; padding: 5px 6px; }
+  .nav-btn { height: 42px; min-width: 48px; padding: 0 12px; font-size: 12px; }
+  .nav-count { min-width: 62px; font-size: 13px; }
+  .scroll-hint { font-size: 11px; white-space: normal; width: max-content; max-width: calc(100vw - 32px); text-align: center; }
   #w-kindi, #w-aes { width: auto; }
   #w-hold { left: auto; right: 12px; }
   #w-hold .panel-tip { max-width: 150px; }
