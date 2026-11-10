@@ -91,17 +91,40 @@
 
   // ракурс: на телефоне показываем середину кадра целиком
   function fit() {
-    const portrait = innerWidth / innerHeight < .9;
+    const W = innerWidth, Hh = innerHeight, portrait = W / Hh < .9;
     document.documentElement.classList.toggle('portrait', portrait);
     SCENES.forEach(s => {
       const svg = s.el.querySelector('.art');
+      if (!portrait) { svg.setAttribute('viewBox', '0 0 1600 1000'); svg.setAttribute('preserveAspectRatio', 'xMidYMid slice'); return; }
+      // телефон: рисунок начинается сразу под подписью, фон тянется вверх и вниз
       const [x0, x1] = s.focus || [300, 1300];
-      if (portrait) { svg.setAttribute('viewBox', `${x0} 0 ${x1 - x0} 1000`); svg.setAttribute('preserveAspectRatio', 'xMidYMid meet'); }
-      else { svg.setAttribute('viewBox', '0 0 1600 1000'); svg.setAttribute('preserveAspectRatio', 'xMidYMid slice'); }
+      const fw = x1 - x0, k = W / fw;
+      const cap = s.el.querySelector('.cap');
+      let top = cap ? cap.offsetTop + cap.offsetHeight + 4 : 0;
+      if (top + 1000 * k > Hh) top = Math.max(0, Hh - 1000 * k - 10);
+      svg.setAttribute('viewBox', `${x0} ${(-top / k).toFixed(1)} ${fw} ${(Hh / k).toFixed(1)}`);
+      svg.setAttribute('preserveAspectRatio', 'xMidYMin meet');
+    });
+    // реплики на телефоне крупнее: увеличиваем пузырь от хвостика и не даём вылезти за край
+    SCENES.forEach(s => {
+      const [x0, x1] = s.focus || [300, 1300];
+      const p = portrait ? Math.min(1.6, Math.max(1, 15 / (40 * W / (x1 - x0)))) : 1;
+      s.el.querySelectorAll('.bubble .bz').forEach(g => {
+        g.removeAttribute('transform');
+        if (p === 1) return;
+        const [tx, ty] = g.parentNode.dataset.tail.split(' ').map(Number);
+        const b = g.getBBox();
+        const L = tx + (b.x - tx) * p, R = tx + (b.x + b.width - tx) * p, T = ty + (b.y - 34 - ty) * p;
+        let dx = 0, dy = 0;
+        if (L < x0 + 8) dx = x0 + 8 - L; else if (R > x1 - 8) dx = x1 - 8 - R;
+        if (T < 4) dy = 4 - T;
+        g.setAttribute('transform', `translate(${dx.toFixed(1)} ${dy.toFixed(1)}) translate(${tx} ${ty}) scale(${p.toFixed(3)}) translate(${-tx} ${-ty})`);
+      });
     });
   }
   fit();
   addEventListener('resize', fit);
+  document.fonts && document.fonts.ready.then(fit);
 
   // ---------- 3. Главный таймлайн по скроллу
   gsap.registerPlugin(ScrollTrigger);
