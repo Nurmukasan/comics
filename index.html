@@ -3,38 +3,42 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Тайнопись — комикс</title>
-<meta name="description" content="Интерактивный комикс «История самого гениального изобретения»: от скиталы и шифра Цезаря до Энигмы и квантовых компьютеров.">
-<meta name="theme-color" content="#e2231a">
+<title>Тайнопись — 3D-комикс</title>
+<meta name="description" content="3D-комикс «Тайнопись»: история самого гениального изобретения — шифра. От скиталы и Цезаря до Энигмы и квантовых компьютеров.">
+<meta name="theme-color" content="#140a08">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23e2231a'/%3E%3Ctext x='32' y='44' font-family='Georgia' font-size='34' font-weight='700' text-anchor='middle' fill='%23111'%3ED%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Pangolin&family=Alegreya:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Pangolin&family=Alegreya:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@700&family=Rubik+Mono+One&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<script type="importmap">{"imports":{"three":"./vendor/three/three.module.min.js"}}</script>
 </head>
 <body>
 
-<!-- общие SVG-определения: фильтры гравюры создаёт js/main.js -->
 <svg id="defs" width="0" height="0" aria-hidden="true" focusable="false"><defs id="gdefs"></defs></svg>
 
 <header class="hud" aria-label="Навигация">
   <a class="hud-logo" href="#top" data-goto="0">ТАЙНОПИСЬ</a>
-  <div class="hud-place"><span id="hudPlace">ЛИСТАЙ ВНИЗ</span><b id="hudYear"></b></div>
+  <div class="hud-place"><span id="hudPlace">ОБЛОЖКА</span><b id="hudYear"></b></div>
   <div class="hud-right">
-    <span class="hud-frame" id="hudFrame">00/13</span>
-    <button class="hud-btn" id="btnPrompter" aria-pressed="false" title="Суфлёр: текст выступления по кадрам">Суфлёр</button>
+    <span class="hud-frame" id="hudFrame"></span>
+    <button class="hud-btn" id="btnPrompter" aria-pressed="false" title="Суфлёр: текст выступления по страницам">Суфлёр</button>
     <button class="hud-btn" id="btnSound" aria-pressed="false" title="Звук">Звук</button>
     <a class="hud-btn" href="#speech" id="btnSpeech">Речь</a>
   </div>
 </header>
 
-<main id="stage" aria-live="polite"></main>
+<main id="stage" aria-label="Комикс">
+  <div id="world"><div id="book"></div></div>
+  <div class="scroll-hint" id="scrollHint">листай вниз, чтобы открыть ↓</div>
+</main>
 
-<div class="progress" aria-hidden="true"><div class="progress-fill" id="progressFill"></div><div class="progress-alpha" id="progressAlpha"></div></div>
+<div id="cap" class="cap" aria-live="polite"></div>
+<div id="widgets"></div>
 
-<div class="prompter" id="prompter" hidden>
-  <div class="prompter-inner" id="prompterText"></div>
-</div>
+<div class="progress" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
+
+<div class="prompter" id="prompter" hidden><div class="prompter-inner" id="prompterText"></div></div>
 
 <div id="scroller" aria-hidden="true"></div>
 
@@ -42,9 +46,8 @@
   <div class="speech-wrap">
     <p class="kicker">Речевое сопровождение · 2 минуты · два голоса</p>
     <h2>Текст выступления</h2>
-    <p class="speech-hint">Включите «Суфлёр» в шапке, и реплики появятся внизу экрана прямо во время показа. Стрелка вниз или пробел листают кадры, удобно с презентационным пультом.</p>
+    <p class="speech-hint">Включите «Суфлёр» в шапке, и реплики появятся внизу экрана прямо во время показа. Стрелки и пробел листают кадры, удобно с презентационным пультом.</p>
     <ol class="speech-list" id="speechList"></ol>
-
     <div class="speech-grid">
       <div class="card">
         <h3>Средства выразительности</h3>
@@ -63,7 +66,7 @@
           <li><b>История:</b> Спарта, Галльская война, Багдад, Вторая мировая.</li>
           <li><b>Математика:</b> сдвиг по модулю 26, комбинаторика, простые числа.</li>
           <li><b>Лингвистика:</b> частотность букв (О в русском, E в английском).</li>
-          <li><b>Информатика:</b> AES, открытый ключ, квантовые алгоритмы.</li>
+          <li><b>Информатика:</b> AES, открытый ключ, квантовые алгоритмы. Алиса и Боб — традиционные имена героев в криптографии.</li>
         </ul>
       </div>
       <div class="card">
@@ -79,9 +82,8 @@
         </ul>
       </div>
     </div>
-
     <div class="credits">
-      <p>Комикс нарисован кодом: персонажи в стиле манги, SVG и фильтр «гравюра» (линии толще там, где темнее), анимация на GSAP ScrollTrigger. Шрифты: Unbounded, Pangolin, Alegreya, JetBrains Mono. Трейлер собран и отрендерен в HyperFrames. Правила движения взяты из скилла OBSION Motion: камера дышит, у каждого события есть причина и реакция, сцены меняет объект мира (красный круг). Тексты вычищены по правилам stop-slop.</p>
+      <p>Комикс нарисован кодом: персонажи и сцены — SVG со штрихом «гравюра» и растровыми точками, как в печатных комиксах; книга листается в 3D на CSS; бюст Цезаря — настоящая 3D-модель (three.js, скан головы Lee Perry-Smith, Infinite-Realities, CC BY 3.0) с гравюрным шейдером. Анимация — GSAP ScrollTrigger, трейлер — HyperFrames. Правила движения — из скилла OBSION Motion, тексты вычищены по правилам stop-slop.</p>
       <p><a href="#top" data-goto="0">↑ В начало комикса</a></p>
     </div>
   </div>
@@ -99,7 +101,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="js/art.js"></script>
-<script src="js/scenes.js"></script>
-<script src="js/main.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/pages.js"></script>
+<script src="js/book.js"></script>
+<script type="module">
+  import { createBust } from './js/bust.js';
+  window.createBust = createBust;
+  window.dispatchEvent(new Event('bust-ready'));
+</script>
 </body>
 </html>
