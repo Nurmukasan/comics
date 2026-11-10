@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+    <style>
+      :root {
+        --red: #e2231a;
+        --ink: #111;
+        --paper: #fff;
+        --yellow: #f3c117;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--paper); }
+      #root { position: relative; width: 100%; height: 100%; font-family: Oswald, sans-serif; overflow: hidden; }
+      /* гравюрные вертикальные штрихи, гуще сверху */
+      #bg { position: absolute; inset: 0; background: var(--paper); }
+      #lines {
+        position: absolute; left: -40px; right: -40px; top: -40px; height: 640px;
+        background: repeating-linear-gradient(90deg, #111 0 7px, transparent 7px 13px);
+        -webkit-mask-image: linear-gradient(#000 0%, #000 30%, transparent 100%);
+        mask-image: linear-gradient(#000 0%, #000 30%, transparent 100%);
+      }
+      #lines2 {
+        position: absolute; left: -40px; right: -40px; bottom: -40px; height: 300px;
+        background: repeating-linear-gradient(90deg, #111 0 4px, transparent 4px 13px);
+        -webkit-mask-image: linear-gradient(transparent, #000);
+        mask-image: linear-gradient(transparent, #000);
+      }
+      #sun { position: absolute; left: 960px; top: 560px; width: 760px; height: 760px; margin: -380px 0 0 -380px; border-radius: 50%; background: var(--red); }
+      #word { position: absolute; left: 0; right: 0; top: 400px; height: 220px; display: flex; justify-content: center; gap: 18px; }
+      .slot { width: 170px; height: 220px; overflow: hidden; background: #fff; border: 6px solid var(--ink); box-shadow: 10px 10px 0 var(--ink); }
+      .col { display: flex; flex-direction: column; }
+      .col span { height: 208px; line-height: 208px; text-align: center; font-size: 170px; font-weight: 700; color: var(--ink); }
+      .col span:last-child { color: var(--red); }
+      #kicker { position: absolute; left: 0; right: 0; top: 250px; text-align: center; font-size: 44px; letter-spacing: .2em; color: #fff; }
+      #kicker b { background: var(--ink); padding: 6px 22px; font-weight: 500; }
+      #shift { position: absolute; left: 0; right: 0; top: 700px; text-align: center; font-size: 46px; letter-spacing: .14em; color: var(--ink); }
+      #shift b { background: var(--yellow); padding: 4px 18px; border: 4px solid var(--ink); }
+      #years { position: absolute; left: 0; right: 0; top: 300px; text-align: center; font-size: 230px; font-weight: 700; color: var(--ink); letter-spacing: .02em; }
+      #yearsub { position: absolute; left: 0; right: 0; top: 590px; text-align: center; font-size: 46px; letter-spacing: .2em; color: var(--ink); }
+      #names { position: absolute; left: 0; right: 0; top: 720px; display: flex; justify-content: center; gap: 22px; }
+      #names span { font-size: 38px; letter-spacing: .1em; background: var(--ink); color: #fff; padding: 6px 16px; }
+      #names span.r { background: var(--red); }
+      #title { position: absolute; left: 0; right: 0; top: 330px; text-align: center; font-size: 250px; font-weight: 700; color: #fff; letter-spacing: .04em; text-shadow: 10px 10px 0 var(--red), 0 0 0 #000; -webkit-text-stroke: 6px var(--ink); }
+      #sub { position: absolute; left: 0; right: 0; top: 660px; text-align: center; }
+      #sub b { font-family: Georgia, serif; font-style: italic; font-weight: 400; font-size: 58px; background: var(--ink); color: #fff; padding: 6px 26px; }
+      #cta { position: absolute; left: 0; right: 0; top: 800px; text-align: center; font-size: 40px; letter-spacing: .2em; color: var(--ink); }
+      #cta b { background: var(--yellow); border: 4px solid var(--ink); padding: 6px 20px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="10" data-width="1920" data-height="1080">
+      <div id="bg" class="clip" data-start="0" data-duration="10" data-track-index="0"></div>
+      <div id="lines" class="clip" data-start="0" data-duration="10" data-track-index="1"></div>
+      <div id="lines2" class="clip" data-start="0" data-duration="10" data-track-index="2"></div>
+      <div id="sun" class="clip" data-start="0" data-duration="10" data-track-index="3"></div>
+
+      <div id="kicker" class="clip" data-start="0" data-duration="4.6" data-track-index="4"><b>58 ДО Н. Э. · ПИСЬМО ЦЕЗАРЯ</b></div>
+      <div id="word" data-layout-allow-overflow data-layout-allow-overlap class="clip" data-start="0" data-duration="4.6" data-track-index="5">
+        <div class="slot"><div class="col" id="c0"><span>D</span><span>C</span><span>B</span><span>A</span></div></div>
+        <div class="slot"><div class="col" id="c1"><span>W</span><span>V</span><span>U</span><span>T</span></div></div>
+        <div class="slot"><div class="col" id="c2"><span>W</span><span>V</span><span>U</span><span>T</span></div></div>
+        <div class="slot"><div class="col" id="c3"><span>D</span><span>C</span><span>B</span><span>A</span></div></div>
+        <div class="slot"><div class="col" id="c4"><span>F</span><span>E</span><span>D</span><span>C</span></div></div>
+        <div class="slot"><div class="col" id="c5"><span>N</span><span>M</span><span>L</span><span>K</span></div></div>
+      </div>
+      <div id="shift" class="clip" data-start="1.6" data-duration="3" data-track-index="6"><b>КЛЮЧ: СДВИГ НА 3</b></div>
+
+      <div id="years" class="clip" data-start="4.6" data-duration="2.6" data-track-index="7">−450</div>
+      <div id="yearsub" class="clip" data-start="4.6" data-duration="2.6" data-track-index="8">2500 ЛЕТ ШИФРОВ И ВЗЛОМОВ</div>
+      <div id="names" class="clip" data-start="4.6" data-duration="2.6" data-track-index="9">
+        <span>СКИТАЛА</span><span class="r">ЦЕЗАРЬ</span><span>АЛЬ-КИНДИ</span><span>ВИЖЕНЕР</span><span class="r">ЭНИГМА</span><span>RSA</span><span>AES</span>
+      </div>
+
+      <div id="title" class="clip" data-start="7.2" data-duration="2.8" data-track-index="10">ТАЙНОПИСЬ</div>
+      <div id="sub" class="clip" data-start="7.2" data-duration="2.8" data-track-index="11"><b>История самого гениального изобретения</b></div>
+      <div id="cta" class="clip" data-start="7.2" data-duration="2.8" data-track-index="12"><b>ЛИСТАЙ КОМИКС ↓</b></div>
+    </div>
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      // камера дышит: медленный подъезд всего кадра
+      tl.fromTo("#lines", { y: -20 }, { y: 20, duration: 10, ease: "none" }, 0);
+      tl.fromTo("#lines2", { y: 20 }, { y: -10, duration: 10, ease: "none" }, 0);
+      // красный круг — сквозной объект: вырастает, сжимается в «печать», раскрывается в титр
+      tl.fromTo("#sun", { scale: 0.35 }, { scale: 1, duration: 0.9, ease: "power3.out" }, 0);
+      tl.to("#sun", { scale: 0.42, y: -120, duration: 0.6, ease: "power2.inOut" }, 4.2);
+      tl.to("#sun", { scale: 1.7, y: 0, duration: 0.7, ease: "power3.in" }, 6.6);
+      // шифровка
+      tl.fromTo("#kicker", { y: -20 }, { y: 0, duration: 0.6, ease: "power2.out" }, 0);
+      tl.fromTo(".slot", { y: 60, opacity: 0.4 }, { y: 0, opacity: 1, duration: 0.45, stagger: 0.07, ease: "back.out(2)" }, 0);
+      tl.fromTo("#shift", { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(3)" }, 1.6);
+      for (let i = 0; i < 6; i++) {
+        tl.fromTo("#c" + i, { y: 0 }, { y: -624, duration: 1.2, ease: "steps(3)" }, 2.0 + i * 0.12);
+      }
+      tl.to(".slot", { y: -30, duration: 0.15, yoyo: true, repeat: 1, stagger: 0.04, ease: "power1.out" }, 3.6);
+      tl.to(["#word", "#kicker", "#shift"], { opacity: 0, y: -60, duration: 0.35, ease: "power2.in" }, 4.2);
+      // годы
+      const yr = { v: -450 };
+      const yEl = document.getElementById("years");
+      tl.fromTo(yr, { v: -450 }, {
+        v: 2026, duration: 2.0, ease: "power2.inOut",
+        onUpdate: () => { const v = Math.round(yr.v); yEl.textContent = v < 0 ? "−" + -v : String(v); },
+      }, 4.75);
+      tl.fromTo("#years", { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }, 4.65);
+      tl.fromTo("#yearsub", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 4.8);
+      tl.fromTo("#names span", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.2, stagger: 0.24, ease: "back.out(2)" }, 4.9);
+      // титр
+      tl.fromTo("#title", { scale: 1.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.35, ease: "power3.in" }, 7.25);
+      tl.fromTo("#sub", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, 7.6);
+      tl.fromTo("#cta", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }, 7.6);
+      tl.to("#title", { scale: 1.06, duration: 2.1, ease: "none" }, 7.6);
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

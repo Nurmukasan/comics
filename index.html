@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Тайнопись — комикс</title>
+<meta name="description" content="Интерактивный комикс «История самого гениального изобретения»: от скиталы и шифра Цезаря до Энигмы и квантовых компьютеров.">
+<meta name="theme-color" content="#e2231a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23e2231a'/%3E%3Ctext x='32' y='44' font-family='Georgia' font-size='34' font-weight='700' text-anchor='middle' fill='%23111'%3ED%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=PT+Mono&family=Neucha&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- общие SVG-определения: фильтры гравюры создаёт js/main.js -->
+<svg id="defs" width="0" height="0" aria-hidden="true" focusable="false"><defs id="gdefs"></defs></svg>
+
+<header class="hud" aria-label="Навигация">
+  <a class="hud-logo" href="#top" data-goto="0">ТАЙНОПИСЬ</a>
+  <div class="hud-place"><span id="hudPlace">ЛИСТАЙ ВНИЗ</span><b id="hudYear"></b></div>
+  <div class="hud-right">
+    <span class="hud-frame" id="hudFrame">00/13</span>
+    <button class="hud-btn" id="btnPrompter" aria-pressed="false" title="Суфлёр: текст выступления по кадрам">Суфлёр</button>
+    <button class="hud-btn" id="btnSound" aria-pressed="false" title="Звук">Звук</button>
+    <a class="hud-btn" href="#speech" id="btnSpeech">Речь</a>
+  </div>
+</header>
+
+<main id="stage" aria-live="polite"></main>
+
+<div class="progress" aria-hidden="true"><div class="progress-fill" id="progressFill"></div><div class="progress-alpha" id="progressAlpha"></div></div>
+
+<div class="prompter" id="prompter" hidden>
+  <div class="prompter-inner" id="prompterText"></div>
+</div>
+
+<div id="scroller" aria-hidden="true"></div>
+
+<section id="speech" class="speech">
+  <div class="speech-wrap">
+    <p class="kicker">Речевое сопровождение · 2 минуты · два голоса</p>
+    <h2>Текст выступления</h2>
+    <p class="speech-hint">Включите «Суфлёр» в шапке, и реплики появятся внизу экрана прямо во время показа. Стрелка вниз или пробел листают кадры, удобно с презентационным пультом.</p>
+    <ol class="speech-list" id="speechList"></ol>
+
+    <div class="speech-grid">
+      <div class="card">
+        <h3>Средства выразительности</h3>
+        <ul>
+          <li><b>Риторический вопрос:</b> «Какое изобретение самое гениальное?»</li>
+          <li><b>Метафора:</b> телефон как «открытая книга», шифр как «стена».</li>
+          <li><b>Олицетворение:</b> «частотный анализ слепнет».</li>
+          <li><b>Антитеза:</b> «перемножить легко, разложить почти невозможно».</li>
+          <li><b>Градация:</b> 25 ключей → 159 квинтиллионов → 10<sup>77</sup>.</li>
+          <li><b>Кольцевая композиция:</b> число три в начале и в выводе.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Межпредметные связи</h3>
+        <ul>
+          <li><b>История:</b> Спарта, Галльская война, Багдад, Вторая мировая.</li>
+          <li><b>Математика:</b> сдвиг по модулю 26, комбинаторика, простые числа.</li>
+          <li><b>Лингвистика:</b> частотность букв (О в русском, E в английском).</li>
+          <li><b>Информатика:</b> AES, открытый ключ, квантовые алгоритмы.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Источники</h3>
+        <ul class="src">
+          <li>Светоний. Жизнь двенадцати цезарей. Божественный Юлий, 56.</li>
+          <li>Плутарх. Лисандр, 19 (скитала).</li>
+          <li>Al-Kindi. Risāla fī istikhrāj al-muʿammā, IX в.</li>
+          <li>S. Singh. The Code Book, 1999 (рус. «Книга шифров»).</li>
+          <li>D. Kahn. The Codebreakers, 1967.</li>
+          <li>Diffie, Hellman. New Directions in Cryptography, 1976.</li>
+          <li>NIST FIPS 197 (AES, 2001); FIPS 203–205 (постквантовые стандарты, 2024).</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="credits">
+      <p>Комикс нарисован кодом: SVG + фильтр «гравюра» (линии толще там, где темнее), анимация на GSAP ScrollTrigger. Трейлер собран и отрендерен в HyperFrames. Правила движения взяты из скилла OBSION Motion: камера дышит, у каждого события есть причина и реакция, сцены меняет объект мира (красный круг). Тексты вычищены по правилам stop-slop.</p>
+      <p><a href="#top" data-goto="0">↑ В начало комикса</a></p>
+    </div>
+  </div>
+</section>
+
+<div class="modal" id="trailerModal" hidden>
+  <div class="modal-box">
+    <button class="modal-close" id="trailerClose" aria-label="Закрыть">×</button>
+    <video id="trailerVideo" src="assets/trailer.mp4" playsinline controls preload="none"></video>
+  </div>
+</div>
+
+<noscript><p class="noscript">Комиксу нужен JavaScript.</p></noscript>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="js/art.js"></script>
+<script src="js/scenes.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
