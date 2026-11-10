@@ -38,6 +38,8 @@ button, input { font: inherit; }
     linear-gradient(180deg, #3a1d14, #1d0e0a 60%, #0d0605);
 }
 #world { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+#stage::after { content: 'Печатаем выпуск…'; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font: 900 22px Unbounded, sans-serif; color: var(--yellow); letter-spacing: .04em; transition: opacity .4s; }
+.ready #stage::after { opacity: 0; }
 #world.moving { will-change: transform; }
 #book { position: absolute; left: 0; top: 0; transform-origin: 500px 725px; }
 #book::before {
@@ -59,6 +61,11 @@ button, input { font: inherit; }
 .face.front .page::after, .face.back .page::after { content: ''; position: absolute; top: 0; bottom: 0; width: 60px; pointer-events: none; z-index: 5; }
 .face.front .page::after { left: 0; background: linear-gradient(90deg, rgba(60, 30, 10, .35), transparent); }
 .face.back .page::after { right: 0; background: linear-gradient(270deg, rgba(60, 30, 10, .35), transparent); }
+.face.front .page:not(.cover)::before { /* загнутый уголок — намёк, что страницу можно перелистнуть */
+  content: ''; position: absolute; right: 0; bottom: 0; width: 70px; height: 70px; z-index: 7; pointer-events: none;
+  background: linear-gradient(135deg, var(--paper) 0 48%, #d9cfb8 50%, #b8ab8f 62%, rgba(0, 0, 0, .25) 100%);
+  clip-path: polygon(100% 0, 100% 100%, 0 100%); filter: drop-shadow(-3px -3px 4px rgba(0, 0, 0, .25));
+}
 .shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0, 0, 0, .75), rgba(0, 0, 0, .25)); opacity: 0; pointer-events: none; z-index: 6; }
 .pg-head { position: absolute; top: 26px; left: 44px; right: 44px; display: flex; justify-content: space-between; font: 700 20px Unbounded, sans-serif; letter-spacing: .03em; color: #111; text-transform: uppercase; }
 .pg-head span:last-child { color: var(--red); }
@@ -140,6 +147,7 @@ button, input { font: inherit; }
   font-size: 19px; line-height: 1.36; opacity: 0; pointer-events: none; transition: opacity .3s;
 }
 .cap.on { opacity: 1; }
+.flipping .cap.on, .flipping .widget.on { opacity: 0; pointer-events: none; }
 .cap p { margin: 0 0 6px; }
 .cap p:last-child { margin-bottom: 0; }
 .cap-k { font-family: Unbounded, sans-serif; font-weight: 900; text-transform: uppercase; font-size: 14px; letter-spacing: .02em; color: var(--red); }

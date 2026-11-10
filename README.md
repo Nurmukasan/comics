@@ -20,12 +20,23 @@
 - `js/pages.js` — страницы, кадры, шаги чтения, реплики и виджеты.
 - `js/book.js` — движок книги: листы, 3D-перелистывание, камера, подписи, оживление персонажей, навигация, звук.
 - `js/bust.js` — 3D-бюст (three.js, модель `assets/3d/head.glb`).
-- `trailer/` — трейлер в HyperFrames.
+- `trailer/` — трейлер в HyperFrames: `capture.mjs` снимает книгу покадрово, `score.py` синтезирует звук.
 
 ## Запуск локально
 
 ```bash
 python3 -m http.server 8000
+```
+
+## Пересборка трейлера
+
+Трейлер собран в HyperFrames из покадровой съёмки самой книги. Нужны Node.js, playwright и ffmpeg.
+
+```bash
+cd trailer
+node capture.mjs http://localhost:8000/
+python3 score.py
+npx hyperframes render -o ../assets/trailer.mp4
 ```
 
 ## Лицензии и источники

@@ -119,7 +119,9 @@
     prevRect = Object.assign({}, rect, { tilt: extra.tilt || 0, res: extra.res || 0, zoom: extra.zoom || 1 });
   }
 
+  const flips = [];
   function flipLeaf(l, t) {
+    flips.push([t - .3, t + .85]);
     const lf = leaves[l];
     const o = { a: 0 };
     master.fromTo(o, { a: 0 }, { a: -180, duration: .8, ease: 'power2.inOut', immediateRender: false, onUpdate: () => setLeaf(lf, o.a) }, t);
@@ -232,7 +234,7 @@
   master.eventCallback('onUpdate', onTime);
 
   // ---------- текущий шаг: подпись, виджет, затемнение кадров, шапка
-  let curStep = -1, curPage = -1, stepSince = 0;
+  let curStep = -1, curPage = -1, stepSince = 0, wasFlipping = false;
   const hudPlace = $('#hudPlace'), hudYear = $('#hudYear'), hudFrame = $('#hudFrame'), fill = $('#progressFill');
   const prompterText = $('#prompterText');
   const yr = { v: 0 };
@@ -244,6 +246,9 @@
     let k = 0;
     for (let i = 0; i < steps.length; i++) if (t >= steps[i].T + Math.min(.3, (steps[i].arrive - steps[i].T) * .6)) k = i;
     if (k !== curStep) setStep(k);
+    // пока лист переворачивается, подписи и виджеты убираем
+    const flipping = flips.some(([a, b]) => t > a && t < b);
+    if (flipping !== wasFlipping) { wasFlipping = flipping; document.documentElement.classList.toggle('flipping', flipping); }
     applyCamera();
     visibility(t);
   }
@@ -265,6 +270,7 @@
       const oldPage = curPage; curPage = p.i;
       hudPlace.textContent = p.place || '';
       hudFrame.textContent = p.num != null ? `${String(p.num).padStart(2, '0')}/${BOOK.chapters}` : '';
+      gsap.killTweensOf(yr);   // иначе счётчик прошлой страницы допишет старый год
       if (p.year != null && !p.yearText) gsap.to(yr, { v: p.year, duration: oldPage < 0 ? 0 : .9, ease: 'power2.out', onUpdate: () => hudYear.textContent = fmtYear(yr.v) });
       else { if (p.year != null) yr.v = p.year; hudYear.textContent = p.yearText || ''; }
       prompterText.innerHTML = (p.speech || []).map(([w, t]) => `<p><b>${w}</b>${t}</p>`).join('') || '<p class="muted">Здесь реплик нет — листай дальше.</p>';
@@ -338,9 +344,12 @@
       document.documentElement.classList.add('no-bust');
     }
   }
+  // бюст живёт на видимой странице разворота: текущей или соседней
   function bustFollow(p) {
     if (!bust || !p) return;
-    const host = p.el && p.el.querySelector('.bust-host');
+    const partner = p.side === 'L' ? pages[p.i + 1] : (p.i > 0 ? pages[p.i - 1] : null);
+    const find = pg => pg && pg.el && pg.el.querySelector('.bust-host');
+    const host = find(p) || find(partner);
     if (host) { if (bust.host !== host) { bust.moveTo(host); bust.host = host; } bust.visible = true; }
     else bust.visible = false;
   }

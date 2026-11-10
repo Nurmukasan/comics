@@ -2,3 +2,7 @@ node_modules/
 trailer/.hyperframes/
 trailer/renders/
 .DS_Store
+# промежуточные файлы трейлера: собираются заново (capture.mjs, score.py)
+trailer/assets/book.mp4
+trailer/assets/score.wav
+trailer/frames/
